@@ -84,6 +84,11 @@ function openNav(){if($('#nav').classList.contains('on')){closeNav();return}clos
 function closeNav(){if(!$('#nav').classList.contains('on'))return;document.documentElement.classList.remove('navon');$('#nav').classList.remove('on');$('#nav').setAttribute('aria-hidden','true');$('#burg').setAttribute('aria-expanded','false');lockOff()}
 $('#burg').addEventListener('click',openNav);
 $('#nav').addEventListener('click',function(e){if(e.target.closest('[data-navclose]'))closeNav()});
+/* меню 2а: аккордеон «Каталог», поиск в шторке */
+(function(){var b=$('#navCat'),acc=$('#navAcc');if(!b||!acc)return;
+  b.addEventListener('click',function(){var o=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',o);acc.classList.toggle('on',o)});
+  var f=$('.nav-s');if(f)f.addEventListener('submit',function(e){var q=$('#nq').value.trim();e.preventDefault();location.href=R+'catalog/'+(q?'?q='+encodeURIComponent(q):'')});
+})();
 (function(){var hdr=$('#hdr'),mega=$('#mega'),tm;
   function on(){clearTimeout(tm);mega.classList.add('on');var b=$('#dnav [data-mega]');if(b)b.classList.add('hov')}
   function off(){tm=setTimeout(function(){mega.classList.remove('on');var b=$('#dnav [data-mega]');if(b)b.classList.remove('hov')},140)}
@@ -254,7 +259,7 @@ function addToCart(){
   if(c)c.q=Math.min(9,c.q+1);else cart.push({id:cur.id,size:curSize,q:1});
   save();flyToCart();renderCartBtn();
   var it=cur,s=curSize;
-  setTimeout(function(){$('#adImg').src=tImg(it);$('#adN').textContent=cardTitle(it)+' · '+sizeLbl(s);
+  setTimeout(function(){$('#adImg').src=tImg(it);$('#adImg').hidden=false;$('#adN').textContent=cardTitle(it)+' · '+sizeLbl(s);
     $('#added').classList.add('on');clearTimeout(adT);adT=setTimeout(function(){$('#added').classList.remove('on')},4200)},RM?0:380)}
 
 /* =================== КОРЗИНА =================== */
@@ -281,11 +286,34 @@ function initCart(){
 
 /* ---------- старт ---------- */
 function rerender(){applyStatic();renderCartBtn();
+  if(PAGE_KIND==='home'){var nR=$('#newR');if(nR&&nR.getAttribute('data-ids')&&(nR.getAttribute('data-l')||'ru')!==lang){nR.setAttribute('data-l',lang);var ids=nR.getAttribute('data-ids').split(',');var keep=nR.scrollLeft;nR.innerHTML=ids.map(function(id){for(var k=0;k<ITEMS.length;k++)if(String(ITEMS[k].id)===id)return cardHTML(ITEMS[k]);return ''}).join('');nR.scrollLeft=keep;nR.querySelectorAll('.card').forEach(function(c){c.classList.add('rv','in')})}}
+  $$('[data-n]').forEach(function(e){e.textContent=words(+e.getAttribute('data-n'))});
   if(PAGE_KIND==='section'&&SEC){renderSec();if($('#fsh').classList.contains('on'))renderF()}
   if(PAGE_KIND==='product'&&cur)renderProduct();
   if(PAGE_KIND==='cart')renderCart();
   if($('#srch').classList.contains('on'))renderSearch();
   document.title=document.title}
+/* =================== ГЛАВНАЯ =================== */
+function initHome(){
+  /* слайдер — механика как в одностраничнике */
+  var hs=$('#hs');if(hs){var tr=$('#hsTr'),sl=$$('.sl'),dots=$$('#hsDots button'),i=0,tm,N=sl.length;
+    function go(n){i=(n+N)%N;tr.style.transform='translateX('+(-i*100)+'%)';
+      sl.forEach(function(s,k){s.classList.toggle('on',k===i)});
+      dots.forEach(function(d,k){d.classList.remove('on');if(k===i){void d.offsetWidth;d.classList.add('on')}});
+      hs.classList.toggle('dk',i===2);plan()}
+    function plan(){clearTimeout(tm);if(!RM)tm=setTimeout(function(){go(i+1)},5500)}
+    dots.forEach(function(d,k){d.addEventListener('click',function(){go(k)})});
+    var x0=null,y0=0;
+    tr.addEventListener('touchstart',function(e){x0=e.touches[0].clientX;y0=e.touches[0].clientY},{passive:true});
+    tr.addEventListener('touchend',function(e){if(x0==null)return;var dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy))go(i+(dx<0?1:-1))});
+    hs.addEventListener('mouseenter',function(){clearTimeout(tm);hs.classList.add('paused')});
+    hs.addEventListener('mouseleave',function(){hs.classList.remove('paused');plan()});
+    document.addEventListener('visibilitychange',function(){if(document.hidden)clearTimeout(tm);else plan()});
+    window.__hsGo=go;requestAnimationFrame(function(){go(0)})}
+  /* блоки въезжают один раз */
+  watch($$('.home .sec-h,.home #tiles .tile,.home #newR .card,.home .buy-tx,.home .buy-ph'));
+}
+if(PAGE_KIND==='home')initHome();
 if(PAGE_KIND==='section')initSection();
 if(PAGE_KIND==='product')initProduct();
 if(PAGE_KIND==='cart')initCart();
